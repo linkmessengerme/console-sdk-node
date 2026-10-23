@@ -1,0 +1,66 @@
+{
+  "name": "@link-apps/console-sdk",
+  "version": "0.3.0",
+  "description": "Official Node.js/TypeScript SDK for Link Developer Platform — OTP, Login and Mini Apps UserInfo.",
+  "license": "MIT",
+  "author": "Link Messenger",
+  "homepage": "https://github.com/linkmessengerme/console-sdk-node#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linkmessengerme/console-sdk-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linkmessengerme/console-sdk-node/issues"
+  },
+  "keywords": [
+    "link",
+    "link-messenger",
+    "otp",
+    "2fa",
+    "authentication",
+    "verification",
+    "console",
+    "sdk"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "examples/own-backend"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "dependencies": {
+    "jose": "^5.10.0"
+  }
+}

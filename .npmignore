@@ -1,0 +1,10 @@
+# Source & tooling — only dist/ ships (see package.json "files").
+src/
+test/
+examples/
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+.gitignore
+*.tsbuildinfo
+coverage/
