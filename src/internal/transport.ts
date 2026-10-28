@@ -32,6 +32,8 @@ export interface TransportConfig {
 
 export interface RequestParams {
   idempotencyKey?: string;
+  /** Reads or operations with durable idempotency in the request body. */
+  retrySafe?: boolean;
   signal?: AbortSignal;
 }
 
@@ -71,7 +73,7 @@ export class HttpTransport {
     const bodyText = JSON.stringify(body ?? {});
 
     let attempts = 1;
-    if (params.idempotencyKey && this.retry.maxRetries > 0) {
+    if ((params.idempotencyKey || params.retrySafe) && this.retry.maxRetries > 0) {
       attempts += this.retry.maxRetries;
     }
 
@@ -223,10 +225,16 @@ function isRetryable(err: unknown): boolean {
 
 interface ErrorEnvelope {
   error?: { code?: string; message?: string; details?: Record<string, unknown> };
+  code?: string;
+  detail?: string;
+  request_id?: string;
+  trace_id?: string;
+  field_violations?: unknown;
+  rate_limit?: unknown;
 }
 
 function decodeApiError(resp: Response, text: string): ApiError {
-  const requestId = resp.headers.get("x-request-id") ?? undefined;
+  let requestId = resp.headers.get("x-request-id") ?? undefined;
   let code: ErrorCode | undefined;
   let message = resp.statusText || `HTTP ${resp.status}`;
   let details: Record<string, unknown> | undefined;
@@ -238,6 +246,14 @@ function decodeApiError(resp: Response, text: string): ApiError {
         code = env.error.code;
         message = env.error.message ?? message;
         details = env.error.details;
+      } else if (typeof env.code === "string") {
+        code = env.code;
+        message = env.detail ?? message;
+        requestId ??= env.request_id;
+        details = {};
+        if (env.trace_id !== undefined) details.trace_id = env.trace_id;
+        if (env.field_violations !== undefined) details.field_violations = env.field_violations;
+        if (env.rate_limit !== undefined) details.rate_limit = env.rate_limit;
       }
     } catch {
       // Non-JSON error body — keep the HTTP status text.
@@ -248,10 +264,13 @@ function decodeApiError(resp: Response, text: string): ApiError {
   switch (code) {
     case "INVALID_TOKEN":
     case "INSUFFICIENT_SCOPE":
+    case "ERROR_CODE_UNAUTHENTICATED":
+    case "ERROR_CODE_PERMISSION_DENIED":
       return new AuthenticationError(init);
     case "IDEMPOTENCY_KEY_CONFLICT":
       return new IdempotencyError(init);
     case "TOO_MANY_REQUESTS":
+    case "ERROR_CODE_RATE_LIMITED":
       return new RateLimitError({ ...init, retryAfter: resp.headers.get("retry-after") ?? undefined });
     default:
       return new ApiError(init);

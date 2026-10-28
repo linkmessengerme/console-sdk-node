@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 — 2026-10-29
+
+- **Breaking:** raised the minimum supported Node.js version to 24.22.1 LTS
+  for the October 2026 security fixes. Builds target Node.js 24; local development
+  and release automation use `.nvmrc`, and CI tests the minimum and latest 24.x.
+- Added Mini Apps merchant payments: create, read, lookup by merchant reference,
+  cancel and record fulfillment, with typed requests, responses and contract enums.
+- Added a separate lazily minted `payments` token cache, preserving OTP scope behavior.
+- Added lossless ProtoJSON int64 handling, durable operation-ID retries and support
+  for gateway ProtoJSON errors alongside the existing OTP error format.
+- Added Test merchant examples and contract fixtures covering business refusals,
+  token scope isolation, refresh and unchanged retry bodies.
+
 ## 0.3.0 — 2026-10-24
 
 - Added standalone `LoginClient.verifyIdToken` and UserInfo without a private key:

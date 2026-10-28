@@ -35,7 +35,7 @@ export class ConfigError extends LinkError {}
 /** Invalid request input, including user tokens (thrown before I/O). */
 export class ValidationError extends LinkError {}
 
-/** Invalid UserInfo JSON, schema, size or subject; never includes raw response data. */
+/** Invalid API response, including UserInfo schema/subject and payment data. */
 export class InvalidResponseError extends LinkError {}
 
 export interface ApiErrorInit {
@@ -51,7 +51,7 @@ export class ApiError extends LinkError {
   readonly statusCode: number;
   readonly code?: ErrorCode;
   readonly details?: Record<string, unknown>;
-  /** Value of the `X-Request-Id` response header, when present. */
+  /** X-Request-Id response header, or the ProtoJSON error's request_id. */
   readonly requestId?: string;
 
   constructor(init: ApiErrorInit) {
@@ -63,13 +63,13 @@ export class ApiError extends LinkError {
   }
 }
 
-/** Bearer token rejected (`INVALID_TOKEN`, `INSUFFICIENT_SCOPE`). */
+/** Bearer rejected or access denied, including ProtoJSON authentication errors. */
 export class AuthenticationError extends ApiError {}
 
 /** Idempotency key reused with a different payload (`IDEMPOTENCY_KEY_CONFLICT`). */
 export class IdempotencyError extends ApiError {}
 
-/** Rate limit exceeded (`TOO_MANY_REQUESTS`). */
+/** Rate limit exceeded (`TOO_MANY_REQUESTS` or `ERROR_CODE_RATE_LIMITED`). */
 export class RateLimitError extends ApiError {
   /** Raw `Retry-After` header value, if the gateway provided one. */
   readonly retryAfter?: string;

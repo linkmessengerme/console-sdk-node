@@ -4,8 +4,8 @@ import { VERSION } from "./version";
 export const DEFAULT_TIMEOUT_MS = 10_000;
 
 /**
- * Automatic retry policy. Retries apply **only** to requests that carry an
- * idempotency key (the SDK attaches one automatically) and only to transient
+ * Automatic retry policy. Retries apply to OTP with an idempotency key,
+ * payment mutations with an operation UUID, and payment reads. Only transient
  * failures — network errors, timeouts, 408/429/5xx, and the
  * "request in progress" idempotency conflict.
  */
