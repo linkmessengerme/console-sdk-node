@@ -15,11 +15,13 @@ import {
   type ClientOptions,
 } from "./options";
 import { OtpService } from "./otp/service";
+import { PaymentsService } from "./payments/service";
 import { UserInfoTransport } from "./internal/userinfo";
 import { LoginService, MiniAppsService } from "./userinfo/service";
 
-// App tokens serve OTP. UserInfo receives its own user token per call.
+// Each service has its own scope and token cache. UserInfo uses user tokens.
 const SCOPE_OTP = "otp";
+const SCOPE_PAYMENTS = "payments";
 
 export interface ClientConfig extends ClientOptions {
   /** OAuth client id from your key-file, e.g. `lk_client_xxxxxxxx`. */
@@ -50,6 +52,7 @@ export class ConsoleClient {
   readonly otp: OtpService;
   readonly login: LoginService;
   readonly miniApps: MiniAppsService;
+  readonly payments: PaymentsService;
 
   constructor(config: ClientConfig) {
     const baseUrl = normalizeBaseUrl(config.baseUrl);
@@ -62,7 +65,8 @@ export class ConsoleClient {
     const creds = fromClientKey(config.clientId, config.privateKey, baseUrl);
     if (config.tokenUrl) creds.tokenUrl = config.tokenUrl.trim();
     if (config.issuer) creds.issuer = config.issuer.trim();
-    this.otp = new OtpService(buildTransport(creds, config));
+    this.otp = new OtpService(buildTransport(creds, config, SCOPE_OTP));
+    this.payments = new PaymentsService(buildTransport(creds, config, SCOPE_PAYMENTS));
     const users = new UserInfoTransport({
       baseUrl, fetchImpl: config.fetch ?? globalThis.fetch,
       timeoutMs: config.timeoutMs && config.timeoutMs > 0 ? config.timeoutMs : DEFAULT_TIMEOUT_MS,
@@ -105,11 +109,11 @@ export class ConsoleClient {
   }
 }
 
-function buildTransport(creds: Credentials, options: ClientOptions): HttpTransport {
+function buildTransport(creds: Credentials, options: ClientOptions, scope: string): HttpTransport {
   const fetchImpl = options.fetch ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
     throw new ConfigError(
-      "global fetch is unavailable — pass options.fetch or run on Node >= 18",
+      "global fetch is unavailable — pass options.fetch or run on Node >= 24.22.1",
     );
   }
   const timeoutMs =
@@ -121,7 +125,7 @@ function buildTransport(creds: Credentials, options: ClientOptions): HttpTranspo
     clientId: creds.clientId,
     issuer: creds.issuer,
     privateKeyPem: creds.privateKeyPem,
-    scope: SCOPE_OTP,
+    scope,
     userAgent: resolveUserAgent(options.userAgentSuffix),
     timeoutMs,
     retry: resolveRetry(options.retry),
