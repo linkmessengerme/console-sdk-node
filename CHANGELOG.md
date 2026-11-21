@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Added `IDTokenClaims.deviceTrust` and the `DeviceTrust` type: the `device_trust`
+  claim of Link Login ID tokens (`verified`, `unlocked`, `mismatch`, `none`),
+  absent while device attestation is off for the application.
+
 ## 0.4.0 — 2026-10-29
 
 - **Breaking:** raised the minimum supported Node.js version to 24.22.1 LTS

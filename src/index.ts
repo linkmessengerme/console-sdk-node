@@ -27,7 +27,7 @@ export * from "./payments/types";
 export { LoginService, MiniAppsService } from "./userinfo/service";
 export type { UserInfo, LoginUserInfo, MiniAppUserInfo, MiniAppProfile, UserInfoOptions } from "./userinfo/types";
 export { LoginClient, IDTokenError, LoginKeySourceError } from "./login";
-export type { LoginConfig, IDTokenClaims, VerifyIDTokenOptions } from "./login";
+export type { LoginConfig, IDTokenClaims, DeviceTrust, VerifyIDTokenOptions } from "./login";
 
 export { newIdempotencyKey } from "./internal/idempotency";
 export { VERSION } from "./version";

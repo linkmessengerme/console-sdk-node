@@ -23,6 +23,8 @@ export interface LoginConfig {
   clientIds: readonly string[];
   fetch?: FetchLike;
 }
+/** Link's view of the device that signed in. Later levels are passed through as strings. */
+export type DeviceTrust = "verified" | "unlocked" | "mismatch" | "none" | (string & {});
 export interface IDTokenClaims {
   readonly issuer: string;
   readonly sub: string;
@@ -31,6 +33,13 @@ export interface IDTokenClaims {
   /** Unix seconds. */
   readonly issuedAt: number;
   readonly expiresAt: number;
+  /**
+   * The `device_trust` claim: `verified` (the genuine app on a genuine device),
+   * `unlocked` (Android with an unlocked bootloader), `mismatch` (a genuine
+   * attestation of a different app) or `none` (nothing is known). Absent while
+   * device attestation is off for the application in Link Console.
+   */
+  readonly deviceTrust?: DeviceTrust;
 }
 export interface VerifyIDTokenOptions {
   /** Expected value saved by the backend before sign-in, not supplied with the token. */
@@ -127,7 +136,13 @@ export class LoginClient {
         !Number.isSafeInteger(p.iat) || !Number.isSafeInteger(p.exp) || p.iat! <= 0 || p.exp! <= p.iat! ||
         p.iat! > now + 30 || p.exp! <= now - 30 ||
         (p.nbf !== undefined && (!Number.isSafeInteger(p.nbf) || p.nbf < 0 || p.nbf > now + 30))) throw new IDTokenError();
-    return Object.freeze({ issuer: this.issuer, sub: p.sub, clientId: aud[0], nonce: p.nonce, issuedAt: p.iat!, expiresAt: p.exp! });
+    // Informational: a claim of an unexpected shape means "not reported" and
+    // never rejects an otherwise valid token.
+    const trust = p.device_trust;
+    return Object.freeze({
+      issuer: this.issuer, sub: p.sub, clientId: aud[0], nonce: p.nonce, issuedAt: p.iat!, expiresAt: p.exp!,
+      ...(typeof trust === "string" && /^[a-z_]{1,32}$/.test(trust) ? { deviceTrust: trust } : {}),
+    });
   }
 
   private async key(kid: string, signal?: AbortSignal): Promise<KeyLike | Uint8Array> {

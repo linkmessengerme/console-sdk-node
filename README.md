@@ -150,7 +150,22 @@ const profile = await login.getUserInfo(loginAccessToken, { expectedSub: identit
 matching `azp`, subject, `iat`/`exp`/optional `nbf` (30 seconds clock tolerance),
 and the required expected nonce. It rejects access tokens and refreshed ID tokens
 without that nonce. Returns immutable `issuer`, `sub`, `clientId`, `nonce`,
-`issuedAt`, `expiresAt` (Unix seconds). Optional `signal` cancels a call.
+`issuedAt`, `expiresAt` (Unix seconds) and optional `deviceTrust`. Optional `signal`
+cancels a call.
+
+`deviceTrust` is Link's view of the device that signed in, when device attestation
+is on for the application in Link Console: `"verified"` (the genuine app on a
+genuine device), `"unlocked"` (Android with an unlocked bootloader), `"mismatch"`
+(a genuine attestation of a different app) or `"none"` (nothing is known: an old
+OS, an emulator, an older mobile SDK). It is `undefined` while attestation is off.
+Link enforces the mode you chose in Console; use the value for your own decisions,
+for example to ask for one more confirmation before a sensitive action:
+
+```ts
+if (claims.deviceTrust !== "verified") {
+  // sign the person in, but treat the device as unverified
+}
+```
 
 This is the Link Login token profile, not a generic verifier for Mini App tokens.
 Discovery/JWKS are fetched only from the configured API origin, without

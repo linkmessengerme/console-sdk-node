@@ -23,6 +23,21 @@ describe("Login ID token", () => {
   });
 
   it.each([
+    ["verified", "verified"], ["unlocked", "unlocked"], ["mismatch", "mismatch"], ["none", "none"],
+    ["a_later_level", "a_later_level"],
+    [undefined, undefined], [7, undefined], [true, undefined], [{ level: "verified" }, undefined],
+    ["Not A Level", undefined], ["", undefined], ["a".repeat(33), undefined],
+  ])("reports device_trust %j as %j and never rejects the token for it", async (claim, expected) => {
+    const { client, token } = loginFixture();
+    // Claims this SDK version does not know are ignored.
+    const claims = await client.verifyIdToken(
+      await token({ device_trust: claim, some_future_claim: { version: 2 } }), { nonce: NONCE });
+    expect(claims.deviceTrust).toBe(expected);
+    expect("deviceTrust" in claims).toBe(expected !== undefined);
+    expect(claims.sub).toBe("user1");
+  });
+
+  it.each([
     { iss: "https://evil.test" }, { aud: "other" }, { aud: ["ios-client", "android-client"] },
     { azp: "android-client" }, { azp: undefined }, { sub: "" }, { sub: undefined },
     { nonce: "x".repeat(43) }, { nonce: undefined }, { token_use: "access" },
